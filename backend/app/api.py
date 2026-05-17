@@ -2,6 +2,7 @@ import logging
 import uuid
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import JSONResponse
 
 from app.schemas import AnalyzeRequest, AnalyzeResponse
 from app.service import analyze_url
@@ -34,7 +35,7 @@ def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
     except Exception as exc:
         error_id = uuid.uuid4().hex
         LOGGER.exception("Unexpected analyze failure (error_id=%s)", error_id)
-        raise HTTPException(
+        return JSONResponse(
             status_code=500,
-            detail={"detail": "Internal error", "error_id": error_id},
-        ) from exc
+            content={"detail": "Internal error", "error_id": error_id},
+        )
