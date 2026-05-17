@@ -32,7 +32,10 @@ def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
             status_code=502,
             detail="Could not obtain transcript for this video",
         ) from exc
-    except Exception as exc:
+    except Exception:
+        # Use JSONResponse instead of HTTPException so the body keeps a flat
+        # shape: {"detail": "...", "error_id": "..."}. HTTPException would
+        # wrap a dict detail and nest it under "detail".
         error_id = uuid.uuid4().hex
         LOGGER.exception("Unexpected analyze failure (error_id=%s)", error_id)
         return JSONResponse(
