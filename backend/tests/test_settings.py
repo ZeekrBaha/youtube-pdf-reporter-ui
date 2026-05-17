@@ -19,8 +19,10 @@ def test_settings_reads_required_openai_key(monkeypatch):
 def test_settings_missing_key_raises(monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
+    # _env_file=None bypasses backend/.env so the test is deterministic even
+    # when a developer has a local .env with a placeholder key.
     with pytest.raises(Exception):
-        Settings()
+        Settings(_env_file=None)
 
 
 def test_settings_exports_dir_is_absolute(monkeypatch, tmp_path):
