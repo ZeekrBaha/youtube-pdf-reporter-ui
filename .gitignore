@@ -18,3 +18,10 @@ backend/exports/*.pdf
 
 # OS
 .DS_Store
+
+# Brainstorming mockups
+.superpowers/
+
+# Playwright CLI artifacts
+.playwright-cli/
+output/
