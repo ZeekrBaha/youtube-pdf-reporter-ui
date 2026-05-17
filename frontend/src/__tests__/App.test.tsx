@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
@@ -15,7 +15,7 @@ describe("App", () => {
     global.fetch = originalFetch;
   });
 
-  it("idle → loading → success renders summary and topics", async () => {
+  it("idle → loading → success renders summary, topics, and download link", async () => {
     (global.fetch as any).mockResolvedValue({
       ok: true,
       status: 200,
@@ -44,40 +44,57 @@ describe("App", () => {
     ).toHaveAttribute("href", "/pdfs/x.pdf");
   });
 
-  it("idle → loading → error renders the server detail and retry resets", async () => {
+  it("bad-URL submit shows toast, never calls the API", async () => {
+    render(<App />);
+    await userEvent.type(
+      screen.getByLabelText("youtube-url"),
+      "https://example.com/not-a-video",
+    );
+    await userEvent.click(screen.getByRole("button", { name: /analyze/i }));
+
+    expect(
+      await screen.findByText("That doesn't look like a YouTube link."),
+    ).toBeInTheDocument();
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("submit button is enabled whenever the input is non-empty", async () => {
+    render(<App />);
+    const button = screen.getByRole("button", { name: /analyze/i });
+
+    // Empty input: disabled.
+    expect(button).toBeDisabled();
+
+    // Any non-empty input enables the button, even if it doesn't look like a YouTube URL.
+    await userEvent.type(screen.getByLabelText("youtube-url"), "anything");
+    expect(button).toBeEnabled();
+  });
+
+  it("server 400 shows mapped toast, clears spinner, re-enables the form", async () => {
     (global.fetch as any).mockResolvedValue({
       ok: false,
       status: 400,
-      json: async () => ({ detail: "Unsupported YouTube URL" }),
+      json: async () => ({ detail: "Unsupported YouTube URL: x" }),
     });
 
     render(<App />);
     await userEvent.type(
       screen.getByLabelText("youtube-url"),
-      "https://www.youtube.com/watch?v=bad",
+      "https://www.youtube.com/something-not-a-video",
     );
     await userEvent.click(screen.getByRole("button", { name: /analyze/i }));
 
     expect(
-      await screen.findByText("Unsupported YouTube URL"),
+      await screen.findByText(
+        "That YouTube link isn't supported. Try a normal video URL.",
+      ),
     ).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: /try again/i }));
-    expect(screen.queryByText("Unsupported YouTube URL")).not.toBeInTheDocument();
-  });
-
-  it("submit button is disabled until URL looks valid", async () => {
-    render(<App />);
-    const button = screen.getByRole("button", { name: /analyze/i });
-    expect(button).toBeDisabled();
-
-    await userEvent.type(screen.getByLabelText("youtube-url"), "hello");
-    expect(button).toBeDisabled();
-
-    await userEvent.type(
-      screen.getByLabelText("youtube-url"),
-      " https://youtu.be/abc",
-    );
-    expect(button).toBeEnabled();
+    // Spinner gone, form usable.
+    await waitFor(() => {
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+    expect(screen.getByLabelText("youtube-url")).toBeEnabled();
+    expect(screen.getByRole("button", { name: /analyze/i })).toBeEnabled();
   });
 });
