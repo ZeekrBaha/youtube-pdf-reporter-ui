@@ -10,5 +10,4 @@ export type AnalyzeResponse = {
 export type Status =
   | { kind: "idle" }
   | { kind: "loading"; url: string }
-  | { kind: "success"; data: AnalyzeResponse }
-  | { kind: "error"; message: string };
+  | { kind: "success"; data: AnalyzeResponse };
