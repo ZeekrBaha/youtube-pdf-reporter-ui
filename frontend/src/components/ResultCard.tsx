@@ -27,7 +27,9 @@ export function ResultCard({ data, onReset }: Props) {
       </a>
 
       <div style={{ marginTop: 16 }}>
-        <button onClick={onReset}>Analyze another</button>
+        <button type="button" className="button-secondary" onClick={onReset}>
+          Analyze another
+        </button>
       </div>
     </section>
   );
