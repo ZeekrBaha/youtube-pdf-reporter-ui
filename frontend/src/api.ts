@@ -1,5 +1,15 @@
 import type { AnalyzeResponse } from "./types";
 
+export class HttpError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+    this.name = "HttpError";
+  }
+}
+
 export async function analyze(youtubeUrl: string): Promise<AnalyzeResponse> {
   const response = await fetch("/api/analyze", {
     method: "POST",
@@ -17,7 +27,10 @@ export async function analyze(youtubeUrl: string): Promise<AnalyzeResponse> {
     } catch {
       // ignore JSON parse errors
     }
-    throw new Error(detail ?? "Something went wrong while analyzing the video.");
+    throw new HttpError(
+      response.status,
+      detail ?? "Something went wrong while analyzing the video.",
+    );
   }
 
   return (await response.json()) as AnalyzeResponse;

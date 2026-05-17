@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { analyze } from "../api";
+import { analyze, HttpError } from "../api";
 
 describe("analyze", () => {
   const originalFetch = global.fetch;
@@ -39,27 +39,37 @@ describe("analyze", () => {
     );
   });
 
-  it("throws with server detail on non-2xx", async () => {
+  it("throws HttpError carrying status and server detail on non-2xx", async () => {
     (global.fetch as any).mockResolvedValue({
       ok: false,
       status: 400,
       json: async () => ({ detail: "Unsupported YouTube URL" }),
     });
 
-    await expect(analyze("https://example.com")).rejects.toThrow(
-      "Unsupported YouTube URL",
-    );
+    try {
+      await analyze("https://example.com");
+      throw new Error("expected analyze to reject");
+    } catch (error) {
+      expect(error).toBeInstanceOf(HttpError);
+      expect((error as HttpError).status).toBe(400);
+      expect((error as HttpError).message).toBe("Unsupported YouTube URL");
+    }
   });
 
-  it("throws generic message when body has no detail", async () => {
+  it("throws HttpError with status and generic message when body has no detail", async () => {
     (global.fetch as any).mockResolvedValue({
       ok: false,
       status: 500,
       json: async () => ({}),
     });
 
-    await expect(analyze("https://example.com")).rejects.toThrow(
-      /something went wrong/i,
-    );
+    try {
+      await analyze("https://example.com");
+      throw new Error("expected analyze to reject");
+    } catch (error) {
+      expect(error).toBeInstanceOf(HttpError);
+      expect((error as HttpError).status).toBe(500);
+      expect((error as HttpError).message).toMatch(/something went wrong/i);
+    }
   });
 });
