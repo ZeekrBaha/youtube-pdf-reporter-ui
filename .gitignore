@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Env
+.env
+
+# Generated PDFs
+backend/exports/*.pdf
+
+# OS
+.DS_Store
+
+# Brainstorming mockups
+.superpowers/
+
+# Playwright CLI artifacts
+.playwright-cli/
+output/
